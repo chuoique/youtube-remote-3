@@ -16,7 +16,6 @@ var playing 	= false;
 
 var clients 	= { length: 0 };
 
-var processClosedEvents = null;
 
 var mimes 	= {
 
@@ -66,10 +65,12 @@ var app = http.createServer(function(request, response) {
 			});
 
 		} else if(param[0] == 'action' && param[1] == 'pause') {
-			
-			if(vlcProcess) {
-				vlcProcess.stdin.write('pause\n');
+
+			if(!vlcProcess) {
+				return response.end('no_stream_loaded');
 			}
+
+			vlcProcess.stdin.write('pause\n');
 
 			if(playing) {
 				playing = false;
@@ -82,8 +83,6 @@ var app = http.createServer(function(request, response) {
 		} else if(param[0] == 'action' && param[1] == 'songdata') {
 
 			if(processData && vlcProcess) {
-
-				playing = Boolean(vlcProcess.stdin.write('is_playing\n'));
 
 				if(playing) {
 					processData.playing = true;
@@ -225,8 +224,17 @@ function scrapeUri(query, callback) {
 				// garbage collect process
 				vlcProcess = null;
 
-				if(processClosedEvents && processClosedEvents instanceof Array) {
-					processClosedEvents[0].call(this, processData);
+				if(clients) {
+					
+					// tell each client that the song ended
+					for(var i in clients) {
+
+						if(clients[i] && clients[i].emit) {
+							clients[i].emit('songended', { playing: false });
+						}
+
+					}
+
 				}
 
 			});
@@ -246,22 +254,6 @@ app.listen(8000, '0.0.0.0');
 io.listen(app).on('connection', function(client) {
 
 	console.log('client connected');
-
-	if(!processClosedEvents) {
-
-		processClosedEvents = [];
-		processClosedEvents[0] = function(data) {
-			
-			for(var i in clients) {
-
-				if(clients[i] && clients[i].emit) {
-					clients[i].emit('songended', { playing: false });
-				}
-			}
-
-		};
-
-	}
 
 	clients[client.id] = client;
 	clients.length++;

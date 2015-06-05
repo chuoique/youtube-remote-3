@@ -33,7 +33,7 @@
   <body>
 
     <div id="h">
-      <div class="logo">Youtube Remote</div>
+      <div class="logo">Music Remote</div>
       <div class="social hidden-xs">
         <a href="#"><i class="ion-ios-skipbackward" id="back"></i></a>
         <a href="#"><i class="ion-ios-play" id="play"></i></a>
@@ -65,7 +65,7 @@
               <!-- Wrapper for slides -->
               <div class="carousel-inner">
                 <div class="item active">
-                  <h3 id="page-description">No item is currently playing.</h3>
+                  <h3 id="page-playlist">Dust.</h3>
                   <h5><tgr></tgr></h5>
                 </div>
               </div>
@@ -79,8 +79,8 @@
     <div id="f">
       <div class="container">
         <div class="row centered">
-          <h2>Youtube Remote</h2>
-          <h5>http://192.168.0.14:8000</h5>
+          <h2 id="page-description">No track is currently playing.</h2>
+          <h5></h5>
 
           <p class="mt">
             <!-- <a href="#"><i class="ion-social-twitter"></i></a>
@@ -90,7 +90,7 @@
             <a href="#"><i class="ion-social-pinterest"></i></a>
             <a href="#"><i class="ion-social-tumblr"></i></a> -->
           </p>
-          <h6 class="mt">Juan Vallejo</h6>
+          <h6 class="mt">By Juan Vallejo</h6>
         </div><!--/row-->
       </div><!--/container-->
     </div><!--/F-->
@@ -130,8 +130,8 @@
       });
 
       // socket.io events
-      // var socket = io.connect('http://192.168.0.14:8000/');
-      var socket = io.connect('http://192.168.130.91:8000/');
+      var socket = io.connect('http://192.168.0.14:8000/');
+      // var socket = io.connect('http://192.168.130.91:8000/');
 
       socket.on('error', function(err) {
         console.log('Socket error -> ' + err);
@@ -195,7 +195,7 @@
 
             if(data.success) {
 
-              console.log('playing new song' + (Math.random()));
+              console.log('playing new song');
 
               playing = true;
               songLoaded = true;
@@ -237,7 +237,7 @@
 
           if(this.status == 200 && this.readyState == 4) {
             if(this.responseText == 'success') {
-              console.log('success');
+              console.log('play state changed successfully');
             }
           }
 
