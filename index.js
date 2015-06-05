@@ -60,6 +60,7 @@ var app = http.createServer(function(request, response) {
 			var query = url.split('/search/')[1];
 
 			playVideoUri(query, function(data) {
+				console.log('request completed');
 				response.writeHead(200);
 				response.end(data);
 			});
@@ -156,16 +157,29 @@ function scrapeUri(query, callback) {
 
 		response.on('end', function() {
 
-			// terminate an existing process
-			if(vlcProcess) {
-				vlcProcess.stdin.end();
-			}
-
 			var videoData 	= JSON.parse(data);
 			var videoUri 	= 'https://www.youtube.com/watch?v=' + videoData.items[0].id.videoId;
 
 			processData 	= videoData;
 			playing 		= true;
+
+			// determine if vlc child process exists
+			if(vlcProcess) {
+			
+				// stop current song and clear playlist
+				vlcProcess.stdin.write('stop\n');
+				vlcProcess.stdin.write('clear\n');
+
+				// add and play new song
+				vlcProcess.stdin.write('add ' + videoUri + '\n');
+
+				console.log('Now playing \'' + query + '\'...');
+
+				// return response to client
+				callback.call(this, JSON.stringify({ success: true, message: 'success', data: videoData.items }));
+
+				return;
+			}
 
 			// return response to client
 			callback.call(this, JSON.stringify({ success: true, message: 'success', data: videoData.items }));
@@ -177,7 +191,7 @@ function scrapeUri(query, callback) {
 				}
 
 				playing = true;
-				console.log('Now playing -> ' + query);
+				console.log('> Now playing \'' + query + '\'...');
 
 			});
 
@@ -185,9 +199,11 @@ function scrapeUri(query, callback) {
 			 * Called when a song is switched
 			 */
 			vlcProcess.on('exit', function() {
+
 				console.log('process ended');
 				playing = false;
 				processExited = true;
+
 			});
 
 			/**
@@ -198,19 +214,23 @@ function scrapeUri(query, callback) {
 				if(processExited) {
 
 					console.log('process exited and closed');
-					processClosedEvents[0].call(this, processData);
-					playing = true;
 					processExited = false;
 
 				} else {
-					console.log('process closed');
+					console.log('process closed without exiting');
+				}
+
+				// garbage collect process
+				vlcProcess = null;
+
+				if(processClosedEvents && processClosedEvents instanceof Array) {
 					processClosedEvents[0].call(this, processData);
 				}
 
 			});
 
 			vlcProcess.on('message', function(messsage) {
-				console.log('process messa ' + message);
+				console.log('process message -> ' + message);
 			});
 
 		});

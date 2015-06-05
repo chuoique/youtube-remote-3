@@ -130,7 +130,12 @@
       });
 
       // socket.io events
-      var socket = io.connect('http://192.168.0.14:8000/');
+      // var socket = io.connect('http://192.168.0.14:8000/');
+      var socket = io.connect('http://192.168.130.91:8000/');
+
+      socket.on('error', function(err) {
+        console.log('Socket error -> ' + err);
+      });
 
       socket.on('songdata', function(data) {
 
@@ -179,7 +184,7 @@
       function searchMusic(query) {
 
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/api/search/' + encodeURIComponent(query), true);
+        xhr.open('GET', '/api/search/' + encodeURIComponent(query + ' hd'), true);
         xhr.send(null);
 
         xhr.addEventListener('readystatechange', function() {
