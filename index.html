@@ -267,6 +267,10 @@
           if(this.status == 200 && this.readyState == 4) {
 
             if(this.responseText == 'NO_DATA') {
+
+              songLoaded  = false;
+              playing     = false;
+              $('#play').attr('class', 'ion-ios-play');
               return;
             }
 

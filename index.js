@@ -81,7 +81,7 @@ var app = http.createServer(function(request, response) {
 
 		} else if(param[0] == 'action' && param[1] == 'songdata') {
 
-			if(processData) {
+			if(processData && vlcProcess) {
 
 				playing = Boolean(vlcProcess.stdin.write('is_playing\n'));
 
@@ -173,13 +173,15 @@ function scrapeUri(query, callback) {
 				// add and play new song
 				vlcProcess.stdin.write('add ' + videoUri + '\n');
 
-				console.log('Now playing \'' + query + '\'...');
+				console.log('Now playing \'' + videoData.items[0].snippet.title + '\'...');
 
 				// return response to client
 				callback.call(this, JSON.stringify({ success: true, message: 'success', data: videoData.items }));
 
 				return;
 			}
+
+			console.log('> Now playing \'' + videoData.items[0].snippet.title + '\'...');
 
 			// return response to client
 			callback.call(this, JSON.stringify({ success: true, message: 'success', data: videoData.items }));
