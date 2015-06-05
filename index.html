@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="assets/img/favicon.ico">
+
+    <title>Youtube Remote - Juan Vallejo</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="assets/css/ionicons.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="assets/js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body>
+
+    <div id="h">
+      <div class="logo">Youtube Remote</div>
+      <div class="social hidden-xs">
+        <a href="#"><i class="ion-ios-skipbackward" id="back"></i></a>
+        <a href="#"><i class="ion-ios-play" id="play"></i></a>
+        <a href="#"><i class="ion-ios-volume-high" id="vol"></i></a>
+      </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-md-8 col-md-offset-2 centered">
+            <h1 id="page-title">Type an artist or song...</h1>
+            <div class="mtb">
+              <form role="form" action="#" method="post" enctype="plain"> 
+                <input type="text" name="email" class="subscribe-input" placeholder="Enter an artist or song name..." required style="color: black;" id="search-bar">
+                <button class='btn btn-conf btn-green' type="submit">Enter</button>
+              </form>
+            </div><!--/mt-->
+            <h6 id="song-status"></h6>
+          </div>
+        </div><!--/row-->
+      </div><!--/container-->
+    </div><!-- /H -->
+
+    
+
+    <div id="green">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6 col-md-offset-3 centered">
+            <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+              <!-- Wrapper for slides -->
+              <div class="carousel-inner">
+                <div class="item active">
+                  <h3 id="page-description">No item is currently playing.</h3>
+                  <h5><tgr></tgr></h5>
+                </div>
+              </div>
+            </div><!--/Carousel-->
+
+          </div>
+        </div><!--/row-->
+      </div><!--/container-->
+    </div><!--/green-->
+
+    <div id="f">
+      <div class="container">
+        <div class="row centered">
+          <h2>Youtube Remote</h2>
+          <h5>http://192.168.0.14:8000</h5>
+
+          <p class="mt">
+            <!-- <a href="#"><i class="ion-social-twitter"></i></a>
+            <a href="#"><i class="ion-social-dribbble"></i></a>
+            <a href="#"><i class="ion-social-instagram"></i></a>
+            <a href="#"><i class="ion-social-facebook"></i></a>
+            <a href="#"><i class="ion-social-pinterest"></i></a>
+            <a href="#"><i class="ion-social-tumblr"></i></a> -->
+          </p>
+          <h6 class="mt">Juan Vallejo</h6>
+        </div><!--/row-->
+      </div><!--/container-->
+    </div><!--/F-->
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/retina-1.1.0.js"></script>
+    <script>
+
+      var playing     = false;
+      var songLoaded  = false;
+      var newSongReceived = false;
+
+      $(window).on('load', function() {
+        
+        $('#search-bar').on('keypress', function(e) {
+
+          if(e.keyCode == 13) {
+
+            e.preventDefault();
+            searchMusic($(this).val());
+            $(this).val('');
+
+          }
+
+        });
+
+        fetchCurrentSongInfo();
+
+      });
+
+      $('#play').on('click', function() {
+        songTogglePlay();
+      });
+
+      // socket.io events
+      var socket = io.connect('http://192.168.0.14:8000/');
+
+      socket.on('songdata', function(data) {
+
+        console.log('received new song information');
+
+        playing         = true;
+        newSongReceived = true
+        $('#play').attr('class', 'ion-ios-pause');
+
+        parseSongData(data);
+
+      });
+
+      socket.on('songended', function() {
+
+        if(newSongReceived) {
+          newSongReceived = false;
+          return;
+        }
+
+        console.log('song has ended');
+
+        songLoaded  = false;
+        playing     = false;
+
+        $('#play').attr('class', 'ion-ios-play');
+
+        fetchCurrentSongInfo();
+
+      });
+
+      socket.on('songpause', function(data) {
+        
+          playing     = false;
+          $('#play').attr('class', 'ion-ios-play');
+
+      });
+
+      socket.on('songplay', function(data) {
+        
+        playing     = true;
+        $('#play').attr('class', 'ion-ios-pause');
+      
+      });
+
+      function searchMusic(query) {
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/search/' + encodeURIComponent(query), true);
+        xhr.send(null);
+
+        xhr.addEventListener('readystatechange', function() {
+
+          if(this.status == 200 && this.readyState == 4) {
+
+            var data = JSON.parse(this.responseText);
+
+            if(data.success) {
+
+              console.log('playing new song' + (Math.random()));
+
+              playing = true;
+              songLoaded = true;
+              $('#play').attr('class', 'ion-ios-pause');
+              parseSongData(data);
+              
+              // emit song change event
+              socket.emit('songdata', data);
+
+            }
+
+          }
+
+        });
+
+      }
+
+      function songTogglePlay() {
+
+        if(!songLoaded) {
+          return;
+        }
+
+        if(playing) {
+          playing = false;
+          $('#play').attr('class', 'ion-ios-play');
+          socket.emit('songpause');
+        } else {
+          playing = true;
+          $('#play').attr('class', 'ion-ios-pause');
+          socket.emit('songplay');
+        }
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/action/pause', true);
+        xhr.send();
+
+        xhr.addEventListener('readystatechange', function() {
+
+          if(this.status == 200 && this.readyState == 4) {
+            if(this.responseText == 'success') {
+              console.log('success');
+            }
+          }
+
+        });
+      
+      }
+
+      function parseSongData(song) {
+
+        songLoaded = true;
+
+        $('#page-title').html(song.data[0].snippet.title);
+        $('#page-description').html(song.data[0].snippet.description);
+        $('#h').css('background', 'url(' + song.data[0].snippet.thumbnails.high.url + ') no-repeat 0 0 fixed');
+        $('#h').css('background-size', 'cover');
+
+      }
+
+      function fetchCurrentSongInfo() {
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/action/songdata', true);
+        xhr.send();
+
+        xhr.addEventListener('readystatechange', function() {
+
+          if(this.status == 200 && this.readyState == 4) {
+
+            if(this.responseText == 'NO_DATA') {
+              return;
+            }
+
+            var song = JSON.parse(this.responseText);
+            console.log(song);
+
+            $('#page-title').html(song.items[0].snippet.title);
+            $('#page-description').html(song.items[0].snippet.description);
+            $('#h').css('background', 'url(' + song.items[0].snippet.thumbnails.high.url + ') no-repeat 0 0 fixed');
+            $('#h').css('background-size', 'cover');
+
+            songLoaded  = true;
+
+            if(song.playing) {
+              playing     = true;
+              $('#play').attr('class', 'ion-ios-pause');
+            }
+
+          }
+
+        });
+      }
+
+    </script>
+  </body>
+</html>
